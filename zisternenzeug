@@ -8,6 +8,7 @@
 #include <math.h>
 #include<time.h>
 #include "index.h" //Our HTML webpage contents
+#include <ESP8266mDNS.h>        // Include the mDNS library
  
 //SSID and Password to your ESP Access Point
 const char* ssid = "ESPWebServer";
@@ -34,6 +35,7 @@ ESP8266WebServer server(80); //Server on port 80
   //float messwerte[1440];
   float messwert[5];
   float schauers[10];
+  float schauertotal = 0.0;
   int len = (sizeof(messwert)/sizeof(messwert[0]));
   
  
@@ -45,14 +47,112 @@ ESP8266WebServer server(80); //Server on port 80
 void handleRoot() {
 // String s = MAIN_page; //Read HTML contents
 // server.send(200, "text/html", s); //Send web page
-    
-  
-  // HTML-stuff
-  distance = Abstand();
-  String s = String(distance);
-  server.send(200, "text/plain", s); //Send web page
+   String s = Website( messwert, schauers, schauertotal);  
+  server.send(200, "text/HTML", s ); //Send web page
   delay(5000);
 }
+
+
+
+ 
+
+//===============================================================
+//                  WEBSITE
+//===============================================================
+String Website(float messwert[],float schauers[],float schauertotal)
+{
+ Serial.println("test:we bsite"); 
+ Serial.println(messwert[1]); 
+String  s = "Aktueller Fuellstand: \t";
+ s +=String(messwert[len-1]);
+ s += "\n Letzter Regenschauer: \t";
+ s +=String(schauers[9]);
+ Serial.println(s); 
+  //server.send(200, "text/plain", s); //Send web page
+  //return s;
+ 
+
+  String S = "<html><head><title> Regetonnen NodeMCU </title></head> <body>";
+        S +="<h2>Aktueller Fuellstand: \t </h2> <h1>";
+        S +=String(messwert[len-1])+ "\t m^3" ;
+        S +="</h1> \n <h2> letzter Schauer: \t</h2> <h1>";
+        S +=String(schauers[9])+ "\t m^3";
+        S += "</h1> \n <h2>\n Gesamter input (Regen und Manuell): \t</h2> <h1>" + String(schauertotal)+ "\t m^3"+ 
+        S += " </body> </html>" ;
+     return S;
+}
+
+//===============================================================
+//                     LOOP
+//===============================================================
+void loop(void){
+  Serial.print("Laenge Messwerte:");
+  Serial.println(len);
+//  for (int i = 0; i < len; ++i){
+// messwert[i]=0.0;
+ // }
+  server.handleClient();          //Handle client requests
+float schauer_V=0;
+float V=Volumen();
+
+  if (V > messwert[len-1]){ // wenn erfüllt ist wohl regen
+  schauer_V += V - messwert[len-1]; // hier noch regendauer hinzufügen
+  }
+  else{
+    for (int i = 0; i < 10; ++i)//
+   {
+ schauers[i]=schauers[i+1];
+  }
+  schauers[len-1]=schauer_V;
+  schauertotal += schauer_V;
+  schauer_V = 0.0;
+  }
+
+//Anpassung des Mess-Arrays
+ 
+   for (int i = 0; i < len-1; ++i)// geht nur bis len -2
+   {
+  messwert[i]=messwert[i+1];
+  }
+  messwert[len-1]=V;//i-ter wert wird durch i+1 ersetzt
+
+  delay((1*5*1000));// warte für eine Minute!!!!!!!!!!!!
+  }
+//===============================================================
+//                  SETUP
+//===============================================================
+void setup(void){
+
+ pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
+  
+  Serial.begin(115200);
+  Serial.println("");
+  Serial.println("test");
+  WiFi.mode(WIFI_AP);           //Only Access point
+  WiFi.softAP(ssid, password);  //Start HOTspot removing password will disable security
+  WiFi.softAPConfig(local_ip, gateway, subnet);
+ 
+  IPAddress myIP = WiFi.softAPIP(); //Get IP address
+  Serial.print("HotSpt IP:");
+  Serial.println(myIP);   
+ 
+  server.on("/", handleRoot);      //Which routine to handle at root location
+ 
+  server.begin();                  //Start server
+  Serial.println("HTTP server started");
+  Serial.println("test");
+
+  
+if (!MDNS.begin("regentonne")) {             // Start the mDNS responder for esp8266.local
+    Serial.println("Error setting up MDNS responder!");
+  }
+  Serial.println("mDNS responder started, doesnt work on android");
+    
+}
+//===============================================================
+//                 ABSTAND1
+//===============================================================
 
 float Abstand(){
   // Clears the trigPin
@@ -87,6 +187,9 @@ float  distance_real = 0.0;
  // Serial.println(ctime(&now));
 return distance_real;
   }
+  //===============================================================
+//                  Volumen
+//===============================================================
 
 float Volumen(){
   distance = Abstand();
@@ -109,79 +212,4 @@ float S = r * b /2 - s * (r - hoehe)/2;
 float V = S * l;
 return V; 
 }
-
- 
-//===============================================================
-//                  SETUP
-//===============================================================
-void setup(void){
-
- pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
-  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
   
-  Serial.begin(115200);
-  Serial.println("");
-  WiFi.mode(WIFI_AP);           //Only Access point
-  WiFi.softAP(ssid, password);  //Start HOTspot removing password will disable security
-  WiFi.softAPConfig(local_ip, gateway, subnet);
- 
-  IPAddress myIP = WiFi.softAPIP(); //Get IP address
-  Serial.print("HotSpt IP:");
-  Serial.println(myIP);   
- 
-  server.on("/", handleRoot);      //Which routine to handle at root location
- 
-  server.begin();                  //Start server
-  Serial.println("HTTP server started");
-
-}
-
-void Website(float messwert[],float schauers[])
-{
- Serial.println("test:we bsite"); 
- Serial.println(messwert[1]); 
-String  s = "Aktueller Fuellstand:";
- s +=String(messwert[len-1]);
- s += "Letzter Regenschauer:";
- s +=String(schauers[9]);
- Serial.println(s); 
-  server.send(200, "text/plain", s); //Send web page
-}
-//===============================================================
-//                     LOOP
-//===============================================================
-void loop(void){
-  Serial.print("Laenge Messwerte:");
-  Serial.println(len);
-//  for (int i = 0; i < len; ++i){
-// messwert[i]=0.0;
- // }
-  server.handleClient();          //Handle client requests
-float schauer_V=0;
-float V=Volumen();
-  String s = String(V);
-
-  if (V > messwert[len-1]){ // wenn erfüllt ist wohl regen
-  schauer_V += V - messwert[len-1]; // hier noch regendauer hinzufügen
-  }
-  else{
-    for (int i = 0; i < 10; ++i)//
-   {
- schauers[i]=schauers[i+1];
-  }
-  schauers[len-1]=schauer_V;
-  schauer_V = 0.0;
-  }
-
-//Anpassung des Mess-Arrays
- 
-   for (int i = 0; i < len-1; ++i)// geht nur bis len -2
-   {
-  messwert[i]=messwert[i+1];
-  }
-  messwert[len-1]=V;//i-ter wert wird durch i+1 ersetzt
-
-
- Website( messwert, schauers);
-  delay((1*5*1000));// warte für eine Minute!!!!!!!!!!!!
-  }
