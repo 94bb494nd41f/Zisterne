@@ -3,14 +3,16 @@
  * circuits4you.com
  */
 #include <ESP8266WiFi.h>
+
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <math.h>
 #include<time.h>
-#include "index.h" //Our HTML webpage contents
-#include <ESP8266mDNS.h>        // Include the mDNS library
-require("file");
- 
+//#include "index.h" //Our HTML webpage contents
+#include <ESP8266mDNS.h>        // Include the mD#include "FS.h"NS library
+#include "FS.h"
+
+
 //SSID and Password to your ESP Access Point
 const char* ssid = "ESPWebServer";
 const char* password = "12345678";
@@ -23,6 +25,9 @@ const int echoPin = 0;  //D3
 long duration;
 float distance;
 String html;
+
+// starte das Dateisystem
+
 
 
 
@@ -49,14 +54,11 @@ ESP8266WebServer server(80); //Server on port 80
 void handleRoot() {
 // String s = MAIN_page; //Read HTML contents
 // server.send(200, "text/html", s); //Send web page
-   String s = Website( messwert, schauers, schauertotal);  
-  server.send(200, "text/HTML", s ); //Send web page
+//   String s = Website( messwert, schauers, schauertotal);
+   server.send(200, "text/HTML", html ); //Send web page
   delay(5000);
 }
 
-
-
- 
 
 //===============================================================
 //                  WEBSITE
@@ -124,6 +126,7 @@ float V=Volumen();
 //                  SETUP
 //===============================================================
 void setup(void){
+  SPIFFS.begin();
 
  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT); // Sets the echoPin as an Input
@@ -150,6 +153,7 @@ if (!MDNS.begin("regentonne")) {             // Start the mDNS responder for esp
     Serial.println("Error setting up MDNS responder!");
   }
   Serial.println("mDNS responder started, doesnt work on android");
+  
 
   html = readHtmlFile();
     
@@ -160,19 +164,19 @@ if (!MDNS.begin("regentonne")) {             // Start the mDNS responder for esp
 //===============================================================
 
 String readHtmlFile() {
-    file.open("zisterne.html", "r");
-    String line = "";
-    repeat
-        html = html + line;
-        line = file.read();
-    until (line ~= nil)
-    Serial.println(html);
+File  file=SPIFFS.open("/zisterne.html", "r");
+  if (!file) {
+    Serial.println("file open failed");
+}
+String html = file.readString();
+Serial.println(html);
+file.close();
+return html;
 }
 
 //===============================================================
 //                 ABSTAND1
-//===============================================================
-
+//==============================================================
 float Abstand(){
   // Clears the trigPin
   digitalWrite(trigPin, LOW);
