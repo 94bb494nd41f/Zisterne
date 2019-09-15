@@ -9,6 +9,7 @@
 #include<time.h>
 #include "index.h" //Our HTML webpage contents
 #include <ESP8266mDNS.h>        // Include the mDNS library
+require("file");
  
 //SSID and Password to your ESP Access Point
 const char* ssid = "ESPWebServer";
@@ -21,7 +22,7 @@ const int echoPin = 0;  //D3
 // defines variables
 long duration;
 float distance;
-string html;
+String html;
 
 
 
@@ -158,13 +159,13 @@ if (!MDNS.begin("regentonne")) {             // Start the mDNS responder for esp
 //                 HTML einlesen
 //===============================================================
 
-string readHtmlFile() {
+String readHtmlFile() {
     file.open("zisterne.html", "r");
-    string line = "";
-    do {
+    String line = "";
+    repeat
         html = html + line;
         line = file.read();
-    } while (line != nil)
+    until (line ~= nil)
     Serial.println(html);
 }
 
