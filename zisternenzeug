@@ -21,6 +21,7 @@ const int echoPin = 0;  //D3
 // defines variables
 long duration;
 float distance;
+string html;
 
 
 
@@ -148,8 +149,25 @@ if (!MDNS.begin("regentonne")) {             // Start the mDNS responder for esp
     Serial.println("Error setting up MDNS responder!");
   }
   Serial.println("mDNS responder started, doesnt work on android");
+
+  html = readHtmlFile();
     
 }
+
+//===============================================================
+//                 HTML einlesen
+//===============================================================
+
+string readHtmlFile() {
+    file.open("zisterne.html", "r");
+    string line = "";
+    do {
+        html = html + line;
+        line = file.read();
+    } while (line != nil)
+    Serial.println(html);
+}
+
 //===============================================================
 //                 ABSTAND1
 //===============================================================
