@@ -3,7 +3,6 @@
    circuits4you.com
 */
 #include <ESP8266WiFi.h>
-
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <math.h>
@@ -12,11 +11,12 @@
 #include <ESP8266mDNS.h>        // Include the mD#include "FS.h"NS library
 #include "FS.h"
 #include <string>
-#include <sstream> //für std::to_string workaround
+//#include <sstream> //für std::to_string workaround
+
 
 //SSID and Password to your ESP Access Point
 const char* ssid = "ESPWebServer";
-const char* password = "12345678";
+const char* password = "0123456789";
 
 // defines pins numbers
 const int trigPin = 2;  //D4
@@ -25,31 +25,15 @@ const int echoPin = 0;  //D3
 // defines variables
 long duration;
 float distance;
-std::string html;
+String html;
 
 // starte das Dateisystem
-
-
-namespace patch  // für std::to_string workaround
-{
-    template < typename T > std::string to_string( const T& n )
-    {
-        std::ostringstream stm ;
-        stm << n ;
-        return stm.str() ;
-    }
-}
-
-#include <iostream>
-
 
 
 /* Put IP Address details */
 IPAddress local_ip(192, 168, 1, 1);
 IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
-
-
 
 ESP8266WebServer server(80); //Server on port 80
 //float messwerte[1440];
@@ -59,62 +43,37 @@ float schauertotal = 0.0;
 int len = (sizeof(messwert) / sizeof(messwert[0]));
 
 
-
-
 //==============================================================
-//     This rutine is exicuted when you open its IP in browser
+//     This routine is executed when you open its IP in browser
 //==============================================================
 void handleRoot() {
   // String s = MAIN_page; //Read HTML contents
   // server.send(200, "text/html", s); //Send web page
-  String s = Website( messwert, schauers, schauertotal);
-  server.send(200, "text/HTML", s ); //Send web page
-  delay(5000);
-}
+  Website(messwert, schauers, schauertotal);
+  server.send(200, "text/HTML", html); //Send web page
+  }
 
 
 //===============================================================
 //                  WEBSITE
 //===============================================================
-String Website(float messwert[], float schauers[], float schauertotal)
+void Website(float messwert[], float schauers[], float schauertotal)
 {
-  Serial.println("test:we bsite");
-  Serial.println(messwert[1]);
-  String  s = "Aktueller Fuellstand: \t";
-  s += String(messwert[len - 1]);
-  s += "\n Letzter Regenschauer: \t";
-  s += String(schauers[9]);
-  Serial.println(s);
-  //server.send(200, "text/plain", s); //Send web page
-  //return s;
-
-
-  String S = "<html><head><title> Regetonnen NodeMCU </title></head> <body>";
-  S += "<h2>Aktueller Fuellstand: \t </h2> <h1>";
-  S += String(messwert[len - 1]) + "\t m^3" ;
-  S += "</h1> \n <h2> letzter Schauer: \t</h2> <h1>";
-  S += String(schauers[9]) + "\t m^3";
-  S += "</h1> \n <h2>\n Gesamter input (Regen und Manuell): \t</h2> <h1>" + String(schauertotal) + "\t m^3" +
-       S += " </body> </html>" ;
-
-  html = ersetzten(html,"&FUELLSTAND_PH", patch::to_string(messwert[len - 1]));
- // html = ersetzten(html, "&SCHAUER_PH", schauers[9]]);
- // html = ersetzten(html, "&GESAMT_PH", schauertotal);
-
+ stringReplace2(html, "&SCHAUER_PH", String(schauers[9]));
+ stringReplace2(html, "&GESAMT_PH", String(schauertotal));
+  stringReplace2(html,"&FUELLSTAND_PH", String(messwert[len - 1]));
+  Serial.println(html);
 }
-
 //===============================================================
-//                 Stringersetzen
+//                 Stringersetzen2
 //==============================================================
-
-
-void ersetzten(std::string input, std::string unterstring, std::string ersetzer)
+void stringReplace2(String& input, String unterstring, String ersetzer)
 {
-  input.replace(input.find(unterstring), unterstring.length(), (ersetzer));
+ input.replace(unterstring, ersetzer);
+ Serial.println("ReplaceFKT");
+ Serial.println(unterstring);
+Serial.println(input);
 }
-
-
-
 
 //===============================================================
 //                     LOOP
@@ -149,7 +108,7 @@ void loop(void) {
     messwert[i] = messwert[i + 1];
   }
   messwert[len - 1] = V; //i-ter wert wird durch i+1 ersetzt
-
+  Website(messwert, schauers, schauertotal);
   delay((1 * 5 * 1000)); // warte für eine Minute!!!!!!!!!!!!
 }
 //===============================================================
@@ -188,12 +147,11 @@ void setup(void) {
   html = readHtmlFile();
 
 }
-
 //===============================================================
 //                 HTML einlesen
 //===============================================================
 
-std::string readHtmlFile() {
+String readHtmlFile() {
   File  file = SPIFFS.open("/zisterne.html", "r");
   if (!file) {
     Serial.println("file open failed");
@@ -201,6 +159,7 @@ std::string readHtmlFile() {
   html = file.readString();
   Serial.println(html);
   file.close();
+  return html;
 }
 
 
