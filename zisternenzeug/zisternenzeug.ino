@@ -13,7 +13,7 @@
 #include <string>
 
 //SSID and Password to your ESP Access Point
-const char* ssid = "ESPWebServer";
+const char* ssid = "Regentonne:192.168.1.1";
 const char* password = "0123456789";
 
 // defines pins numbers
@@ -23,15 +23,15 @@ const int echoPin = 0;  //D3
 // defines variables
 long duration;
 float distance;
-String html_org, html;
+String html_org;
 
 //float messwerte[1440];
-float messwert[1440],chart[720];
+float messwert[1440],chart[120];
 float hoehe_min, hoehe_max;
 float schauers[10];
 float schauertotal = 0.0;
 int len = (sizeof(messwert) / sizeof(messwert[0]));
-int len_chart=720;
+int len_chart=(sizeof(chart) / sizeof(chart[0]));
 
   /* Put IP Address details */
 IPAddress local_ip(192, 168, 1, 1);
@@ -46,7 +46,15 @@ ESP8266WebServer server(80); //Server on port 80
 void handleRoot() {
   // String s = MAIN_page; //Read HTML contents
   // server.send(200, "text/html", s); //Send web page
-  Website(messwert, schauers, schauertotal);
+//  Website(messwert, schauers, schauertotal);
+    //replace Placeholder in html
+  String html=html_org;
+ html.replace("&SCHAUER_PH", "\t"+String(schauers[9]));
+ html.replace("&GESAMT_PH", "\t"+String(schauertotal));
+ html.replace("&FUELLSTAND_PH", "\t"+String(messwert[len - 1]));
+ html.replace("&hoehe_PH", "\t"+String(String(hoehe_min)+"bis"+String(hoehe_max)));
+ html.replace("//&DATA_PH", "\t"+chart_string(chart));
+  Serial.println(html);
   server.send(200, "text/HTML", html); //Send web page
   }
 //==============================================================
@@ -94,49 +102,43 @@ bool loadFromSpiffs(String path){
   return true;
 }
 
-
-//===============================================================
-//                  replace Website Placeholder
-//===============================================================
-void Website(float messwert[], float schauers[], float schauertotal)
-{
-  //replace Placeholder in html
-  html=html_org;
- html.replace("&SCHAUER_PH", String(schauers[9]));
- html.replace("&GESAMT_PH", String(schauertotal));
- html.replace("&FUELLSTAND_PH", String(messwert[len - 1]));
- html.replace("&hoehe_PH", String(String(hoehe_min)+"-"+String(hoehe_max)));
-  Serial.println(html);
-}
-
 //===============================================================
 //                  Chart generation
 //===============================================================
 String chart_string(float chart[]){
-  //zeit =0
-  float time =0.0;
   //inkrement der Messung
 int  inkrement = 6;//h
   String chartdata="data: [{ \n";
   int j=0;
-  int day=0;
+  int month=1;
+  int day=1;
   int hour = 0;
   
   for (int i=len_chart; i>=0 ; i--){
     chartdata += "x: new Date"; //(2019,9,16,22,2,0,0),
-    chartdata += "(2019,9,";
+    chartdata += "(2019,";
     //datum bestimmen
     hour+=inkrement;
     if (hour>=24){
       hour =hour-24;
       day+=1;
     }
-    chartdata +=String(day)+String(hour);
+    if (day>=30){
+      day=day-30;
+      month+=1;
+    }
+    chartdata +=String(month)+","+String(day)+","+String(hour);
     chartdata+=",2,0,0),";
     chartdata+="\n y:"+String(chart[i]);
+
+    if(i!=0){
     chartdata +="\n }, { \n";
+    }
   }
-  chartdata += "}]";
+
+  
+  chartdata += "}] \n";
+  chartdata += "}] \n";
   return chartdata;
 }
 
@@ -182,8 +184,8 @@ void loop(void) {
   messwert[0] = V; //i-ter wert wird durch i+1 ersetzt
   //Serial.print(time(time_t *tp));
   
-      //Anpassung des Chart-Arrays
-      if(j=2);//jetzt sind 6 h vergangen
+      //Anpassung des Chart-Arrays, alle 6h ein wert ins Array
+      if(j=360);//jede i-te messung -> auf ablauf einer h warten: j = 360
       {
         j=0;
         
@@ -197,9 +199,10 @@ void loop(void) {
       }
 
 
-  String chart_stuff=chart_string( chart);
+  //String chart_stuff=chart_string( chart);
   //Serial.print(chart_stuff);
-  delay((1 * 5 * 1000)); // warte für eine Minute!!!!!!!!!!!!
+  
+  delay((1 * 60 * 1000)); // warte für eine Minute
 }
 //===============================================================
 //                  SETUP

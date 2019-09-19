@@ -2,18 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <script src="Chart.bundle.js"></script>
+    <script src="Chart.bundlemin.js"></script>
     <title>Sick Charts</title>
 
 </head>
 <body>
 mit niederschlag
-<h2>Aktueller Fuellstand in m3: \t  &FUELLSTAND_PH </h2>
-    <h2> letzter Schauer in m3: \t &SCHAUER_PH </h2>
-    <h2>  Gesamter input (Regen und Manuell) in m3: \t &GESAMT_PH </h2>
-    <h2> Minimale und Maximale Hohe in m: \t &hoehe_PH </h2>
-    
-    <canvas id="myChart" height="600" width="1000"></canvas>
+<h2>Aktueller Fuellstand in m3:  &FUELLSTAND_PH </h2>
+    <h2> letzter Schauer in m3: &SCHAUER_PH </h2>
+    <h2>  Gesamter input (Regen und Manuell) in m3:  &GESAMT_PH </h2>
+    <h2> Minimale und Maximale Hohe in m: &hoehe_PH </h2>
+        <canvas id="myChart" height="600" width="1000"></canvas>
     <script type="text/javascript">
         var ctx = document.getElementById('myChart').getContext('2d');
         ctx.height = 1000;
@@ -21,28 +20,11 @@ mit niederschlag
             type: 'line',
             data: {
                 datasets: [{
-                    label: 'Volumen im Tank in m3',
+                    label: 'Volumen in m3',
                     backgroundColor: 'rgb(255, 99, 132)',
                     borderColor: 'rgb(255, 99, 132)',
                     //TODO data durch Placeholder ersetzen und Placeholder später mit korrekten Daten
-                    &DATA_PH
-                    data: [{
-                        x: new Date(2019,9,16,22,2,0,0),
-                        y: 1
-                    }, {
-                        x: new Date(2019,9,16,22,2,5,0),
-                        y: 10
-                    }, {
-                        x: new Date(2019,9,16,22,2,10,0),
-                        y: 15
-                    }, {
-                        x: new Date(2019,9,16,22,2,15,0),
-                        y: 10
-                    }, {
-                        x: new Date(2019,9,16,22,3,15,0),
-                        y: 10
-                    }]
-                }]
+                    //&DATA_PH
             },
             options: {
                 maintainAspectRatio: false,
@@ -50,7 +32,7 @@ mit niederschlag
                     xAxes: [{
                         type: 'time',
                         time: {
-                            unit: 'minute'
+                            unit: 'day'
                         }
                     }],
                     yAxes: [{
