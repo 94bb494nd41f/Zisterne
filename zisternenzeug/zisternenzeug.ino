@@ -12,9 +12,7 @@
 #include "FS.h"
 #include <string>
 
-//SSID and Password to your ESP Access Point
-const char* ssid = "Regentonne:192.168.1.1";
-const char* password = "0123456789";
+
 
 // defines pins numbers
 const int trigPin = 2;  //D4
@@ -150,7 +148,7 @@ int  inkrement = 6;//h
 void loop(void) {
   server.handleClient();          //Handle client requests
   float schauer_V = 0;
-  float V, distance = Volumen();
+  float V, distance = Volumen(); //distance in metern
 
 
 //hoehen MIN/MAX
@@ -201,7 +199,31 @@ void loop(void) {
 
   //String chart_stuff=chart_string( chart);
   //Serial.print(chart_stuff);
+
+  // put data into SSID(max 32char)
+  //////////////////////////////////
+  //werte runden
+  float schauer_ssid  = roundf( schauers[len - 1] * 10) / 10;
+  float V_ssid= roundf(V * 10) / 10;
+  //SSID and Password to your ESP Access Point
+ 
+  String ssid = "V" + String(V_ssid);
+  ssid +="|0S"+String(roundf( schauers[len - 1] * 10) / 10);
+  ssid +="|1S"+String(roundf( schauers[len - 2] * 10) / 10);
+  ssid +="|2S"+String(roundf( schauers[len - 3] * 10) / 10); 
+  ssid +="hmx" + String(roundf(hoehe_max * 100)/100);
+  ssid +="hmn" + String(roundf(hoehe_min *100) /100);
+  const char* password = "0123456789";  
   
+  WiFi.mode(WIFI_AP);           //Only Access point
+  WiFi.softAP(ssid, password);  //Start HOTspot removing password will disable security
+  WiFi.softAPConfig(local_ip, gateway, subnet);
+
+  IPAddress myIP = WiFi.softAPIP(); //Get IP address
+  Serial.print("HotSpt IP:");
+  Serial.println(myIP);  
+  
+  //delay
   delay((1 * 60 * 1000)); // warte für eine Minute
 }
 //===============================================================
@@ -219,7 +241,7 @@ void setup(void) {
   Serial.println("");
   Serial.println("test");
   WiFi.mode(WIFI_AP);           //Only Access point
-  WiFi.softAP(ssid, password);  //Start HOTspot removing password will disable security
+//  WiFi.softAP(ssid, password);  //Start HOTspot removing password will disable security
   WiFi.softAPConfig(local_ip, gateway, subnet);
 
   IPAddress myIP = WiFi.softAPIP(); //Get IP address
