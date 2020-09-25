@@ -27,10 +27,11 @@ String html_org;
 float messwert[1440],chart[120];
 float hoehe_min, hoehe_max;
 float schauers[10];
+
 float schauertotal = 0.0;
 int len = (sizeof(messwert) / sizeof(messwert[0]));
 int len_chart=(sizeof(chart) / sizeof(chart[0]));
-
+int len_schauer=(sizeof(schauers) / sizeof(schauers[0]));
   /* Put IP Address details */
 IPAddress local_ip(192, 168, 1, 1);
 IPAddress gateway(192, 168, 1, 1);
@@ -208,28 +209,41 @@ void loop(void) {
   //SSID and Password to your ESP Access Point
  
   String ssid = "V" + String(V_ssid);
-  ssid +="|0S"+String(roundf( schauers[len - 1] * 10) / 10);
-  ssid +="|1S"+String(roundf( schauers[len - 2] * 10) / 10);
-  ssid +="|2S"+String(roundf( schauers[len - 3] * 10) / 10); 
-  ssid +="hmx" + String(roundf(hoehe_max * 100)/100);
-  ssid +="hmn" + String(roundf(hoehe_min *100) /100);
+  String string_s1 = String(schauers[len -1]);
+  String string_s2 = String(schauers[len -2]);
+  String string_s3 = String(schauers[len -3]);
+    
+  ssid +="|0S"+String(string_s1[0]) + String(".") + String(string_s1[2]); //erster schauer
+  ssid +="|1S"+String(string_s2[0]) + String(".") + String(string_s2[2]); //zweiter schauer
+  //ssid +="|2S"+String(string_s3[0]) + String(".") + String(string_s3[2]); //dritter schauer  
+  ssid +="mx" + String(round(hoehe_max * 100)/100);
+  ssid +="mn" + String(round(hoehe_min *100) /100);
   const char* password = "0123456789";  
-  
+  Serial.print("SSID:");
+  Serial.print(ssid);
   WiFi.mode(WIFI_AP);           //Only Access point
   WiFi.softAP(ssid, password);  //Start HOTspot removing password will disable security
   WiFi.softAPConfig(local_ip, gateway, subnet);
 
+  
   IPAddress myIP = WiFi.softAPIP(); //Get IP address
   Serial.print("HotSpt IP:");
   Serial.println(myIP);  
   
   //delay
-  delay((1 * 60 * 1000)); // warte für eine Minute
+ // delay((1 * 60 * 1000)); // warte für eine Minute
+  delay((1 * 2 * 1000)); // warte für 2 s
 }
 //===============================================================
 //                  SETUP
 //===============================================================
 void setup(void) {
+  //arrays init
+  for (int i = 0; i<len_schauer; ++i){
+  schauers[i] = 0.0 ;
+  } ;
+
+  
   //start Dateisystem
   SPIFFS.begin();
 
