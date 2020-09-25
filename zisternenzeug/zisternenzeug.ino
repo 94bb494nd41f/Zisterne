@@ -222,8 +222,18 @@ void loop(void) {
   Serial.print("SSID:");
   Serial.print(ssid);
   WiFi.mode(WIFI_AP);           //Only Access point
-  WiFi.softAP(ssid, password);  //Start HOTspot removing password will disable security
-  WiFi.softAPConfig(local_ip, gateway, subnet);
+ // WiFi.softAP(ssid, password);  //Start HOTspot removing password will disable security
+  //WiFi.softAPConfig(local_ip, gateway, subnet);
+
+  ///////
+  // test weil komisch
+
+    Serial.print("Setting soft-AP configuration ... ");
+  Serial.println(WiFi.softAPConfig(local_ip, gateway, subnet) ? "Ready" : "Failed!");
+  
+  Serial.print("Setting soft-AP ... ");
+   Serial.println(WiFi.softAP(ssid, password) ? "Ready" : "Failed!");
+
 
   
   IPAddress myIP = WiFi.softAPIP(); //Get IP address
@@ -232,7 +242,7 @@ void loop(void) {
   
   //delay
  // delay((1 * 60 * 1000)); // warte für eine Minute
-  delay((1 * 2 * 1000)); // warte für 2 s
+  delay((1 * 20 * 1000)); // warte für 2 s
 }
 //===============================================================
 //                  SETUP
